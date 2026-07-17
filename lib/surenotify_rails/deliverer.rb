@@ -41,14 +41,17 @@ module SurenotifyRails
       addrs = [:to, :cc, :bcc].flat_map do |field|
         rails_message[field] ? rails_message[field].addrs : []
       end
-      addrs.uniq(&:address).map { |addr| recipient_for(addr) }
+      addrs.uniq(&:address).map { |addr| recipient_for(addr, rails_message) }
     end
 
-    def recipient_for(addr)
-      {
+    def recipient_for(addr, rails_message)
+      recipient = {
         name: addr.display_name || addr.address.split("@").first,
         address: addr.address
       }
+      variables = (rails_message.surenotify_recipient_variables || {})[addr.address]
+      recipient[:variables] = variables if variables
+      recipient
     end
 
     # @see http://stackoverflow.com/questions/4868205/rails-mail-getting-the-body-as-plain-text
