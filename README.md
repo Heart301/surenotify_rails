@@ -70,6 +70,7 @@ Raises `SurenotifyRails::APIError` on API errors. Events are limited to the past
 - The Surenotify API allows at most **100 recipients per request**; `SurenotifyRails::TooManyRecipientsError` is raised beyond that (split batches yourself).
 - The API has no cc/bcc concept: cc/bcc addresses are merged into `recipients` (deduplicated), so everyone receives an individual copy.
 - Attachments are not supported by the Surenotify API.
+- `deliver!` raises `SurenotifyRails::APIError` (with `code` and `body`) when the API rejects the request; it no longer silently returns the failed response.
 
 Pull requests are welcomed
 
