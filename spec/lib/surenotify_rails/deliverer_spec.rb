@@ -88,5 +88,20 @@ RSpec.describe SurenotifyRails::Deliverer do
         { "name" => "blind",         "address" => "blind@example.com" }
       )
     end
+
+    it "includes per-recipient variables from surenotify_recipient_variables" do
+      message = build_message
+      message.surenotify_recipient_variables = {
+        "receiver@example.com" => { "coupon" => "ABC123" }
+      }
+
+      payload = deliver_and_capture(message)
+
+      expect(payload["recipients"]).to eq(
+        [{ "name"      => "Receiver Name",
+           "address"   => "receiver@example.com",
+           "variables" => { "coupon" => "ABC123" } }]
+      )
+    end
   end
 end
