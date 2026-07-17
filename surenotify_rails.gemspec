@@ -1,9 +1,5 @@
-$:.push File.expand_path("../lib", __FILE__)
+require_relative "lib/surenotify_rails/version"
 
-# Maintain your gem's version:
-require "surenotify_rails/version"
-
-# Describe your gem and declare its dependencies:
 Gem::Specification.new do |s|
   s.name        = "surenotify_rails"
   s.version     = SurenotifyRails::VERSION
@@ -12,15 +8,21 @@ Gem::Specification.new do |s|
   s.homepage    = "https://github.com/pominx/surenotify_rails"
   s.summary     = "Rails Action Mailer adapter for Surenotify (NewsLeopard)"
   s.description = "An adapter for using Surenotify with Rails and Action Mailer"
-  s.license = 'MIT'
+  s.license     = "MIT"
 
-  s.files = Dir["{app,config,db,lib}/**/*", "MIT-LICENSE", "Rakefile", "README.rdoc"]
-  s.test_files = Dir["test/**/*"]
+  s.metadata = {
+    "homepage_uri"          => s.homepage,
+    "source_code_uri"       => s.homepage,
+    "rubygems_mfa_required" => "true"
+  }
 
-  s.add_dependency "actionmailer", ">= 4.2.11"
-  s.add_dependency "json", ">= 2.1.0"
-  s.add_dependency "rest-client", ">= 2.0.2"
+  s.required_ruby_version = ">= 3.0"
 
-  s.add_development_dependency "rspec", '~> 2.14.1'
-  s.add_development_dependency "rails", ">= 4.2.11"
+  s.files = Dir["lib/**/*", "MIT-LICENSE", "README.md"]
+
+  s.add_dependency "actionmailer", ">= 6.0"
+
+  s.add_development_dependency "rake"
+  s.add_development_dependency "rspec", "~> 3.13"
+  s.add_development_dependency "webmock", "~> 3.0"
 end
