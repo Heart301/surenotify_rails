@@ -1,5 +1,7 @@
 module SurenotifyRails
   class Deliverer
+    MAX_RECIPIENTS = 100
+
     attr_accessor :settings
 
     def initialize(settings)
@@ -42,7 +44,15 @@ module SurenotifyRails
       addrs = [:to, :cc, :bcc].flat_map do |field|
         rails_message[field] ? rails_message[field].addrs : []
       end
-      addrs.uniq(&:address).map { |addr| recipient_for(addr, rails_message) }
+      recipients = addrs.uniq(&:address).map { |addr| recipient_for(addr, rails_message) }
+
+      if recipients.size > MAX_RECIPIENTS
+        raise TooManyRecipientsError,
+              "Surenotify API allows at most #{MAX_RECIPIENTS} recipients per request " \
+              "(got #{recipients.size})"
+      end
+
+      recipients
     end
 
     def recipient_for(addr, rails_message)
