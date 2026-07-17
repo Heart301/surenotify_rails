@@ -103,5 +103,32 @@ RSpec.describe SurenotifyRails::Deliverer do
            "variables" => { "coupon" => "ABC123" } }]
       )
     end
+
+    it "includes unsubscribedLink from the message accessor" do
+      message = build_message
+      message.surenotify_unsubscribed_link = "https://example.com/unsubscribe"
+
+      payload = deliver_and_capture(message)
+
+      expect(payload["unsubscribedLink"]).to eq("https://example.com/unsubscribe")
+    end
+
+    context "with an unsubscribed_link in settings" do
+      let(:settings) do
+        { api_key: "some-api-key", unsubscribed_link: "https://example.com/default-unsub" }
+      end
+
+      it "falls back to the settings value when the message does not set one" do
+        payload = deliver_and_capture(build_message)
+
+        expect(payload["unsubscribedLink"]).to eq("https://example.com/default-unsub")
+      end
+    end
+
+    it "omits unsubscribedLink when neither message nor settings provide one" do
+      payload = deliver_and_capture(build_message)
+
+      expect(payload).not_to have_key("unsubscribedLink")
+    end
   end
 end

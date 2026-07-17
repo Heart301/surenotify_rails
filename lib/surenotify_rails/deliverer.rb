@@ -32,7 +32,8 @@ module SurenotifyRails
         fromAddress: from.address,
         recipients: recipients_for(rails_message),
         subject: rails_message.subject,
-        content: extract_html(rails_message)
+        content: extract_html(rails_message),
+        unsubscribedLink: unsubscribed_link_for(rails_message)
       }
       remove_empty_values(message)
     end
@@ -52,6 +53,10 @@ module SurenotifyRails
       variables = (rails_message.surenotify_recipient_variables || {})[addr.address]
       recipient[:variables] = variables if variables
       recipient
+    end
+
+    def unsubscribed_link_for(rails_message)
+      rails_message.surenotify_unsubscribed_link || settings[:unsubscribed_link]
     end
 
     # @see http://stackoverflow.com/questions/4868205/rails-mail-getting-the-body-as-plain-text
