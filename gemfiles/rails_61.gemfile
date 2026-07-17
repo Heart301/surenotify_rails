@@ -1,0 +1,7 @@
+source "https://rubygems.org"
+
+gemspec path: ".."
+
+gem "actionmailer", "~> 6.1.0"
+# concurrent-ruby 1.3.4+ removed the logger require that ActiveSupport < 7.1 depends on
+gem "concurrent-ruby", "< 1.3.4"
