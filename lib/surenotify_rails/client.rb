@@ -1,8 +1,10 @@
-require 'rest_client'
-
+require "net/http"
+require "json"
 
 module SurenotifyRails
   class Client
+    API_URL = "https://mail.surenotifyapi.com/v1".freeze
+
     attr_reader :api_key, :verify_ssl
 
     def initialize(api_key, verify_ssl = true)
@@ -11,25 +13,26 @@ module SurenotifyRails
     end
 
     def send_message(options)
-      RestClient::Request.execute(
-        method: :post,
-        url: surenotify_url,
-        payload: JSON::dump(options),
-        verify_ssl: verify_ssl,
-        headers: {
-          content_type: 'application/json',
-                accept: 'application/json',
-             x_api_key: @api_key
-        }
-      )
+      uri = URI("#{API_URL}/messages")
+      request = Net::HTTP::Post.new(uri)
+      apply_headers(request)
+      request.body = JSON.dump(options)
+      perform(uri, request)
     end
 
-    def surenotify_url
-      api_url + "/messages"
+    private
+
+    def apply_headers(request)
+      request["Content-Type"] = "application/json"
+      request["Accept"] = "application/json"
+      request["x-api-key"] = api_key
     end
 
-    def api_url
-      'https://mail.surenotifyapi.com/v1'
+    def perform(uri, request)
+      http = Net::HTTP.new(uri.host, uri.port)
+      http.use_ssl = uri.scheme == "https"
+      http.verify_mode = verify_ssl ? OpenSSL::SSL::VERIFY_PEER : OpenSSL::SSL::VERIFY_NONE
+      http.request(request)
     end
   end
 end
