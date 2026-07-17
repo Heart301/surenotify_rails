@@ -18,7 +18,7 @@ Gem::Specification.new do |s|
 
   s.required_ruby_version = ">= 3.0"
 
-  s.files = Dir["lib/**/*", "MIT-LICENSE", "README.md"]
+  s.files = Dir.chdir(__dir__) { Dir["lib/**/*", "MIT-LICENSE", "README.md"] }
 
   s.add_dependency "actionmailer", ">= 6.0"
 
