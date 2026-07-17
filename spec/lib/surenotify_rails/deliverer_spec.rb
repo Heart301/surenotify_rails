@@ -23,12 +23,35 @@ RSpec.describe SurenotifyRails::Deliverer do
                     to: "Receiver Name <receiver@example.com>")
     Mail.new do |m|
       m.from    from
-      m.to      to
+      m.to      to if to
       m.subject "test subject"
       m.html_part do
         content_type "text/html; charset=UTF-8"
         body "<h1>Hello</h1>"
       end
+    end
+  end
+
+  def build_html_message(from: "Sender Name <sender@example.com>",
+                         to: "Receiver Name <receiver@example.com>",
+                         body: "<h1>Direct HTML</h1>")
+    Mail.new do |m|
+      m.from         from
+      m.to           to
+      m.subject      "test subject"
+      m.content_type "text/html; charset=UTF-8"
+      m.body         body
+    end
+  end
+
+  def build_plain_text_message(from: "Sender Name <sender@example.com>",
+                               to: "Receiver Name <receiver@example.com>",
+                               body: "Plain text body")
+    Mail.new do |m|
+      m.from    from
+      m.to      to
+      m.subject "test subject"
+      m.body    body
     end
   end
 
@@ -63,15 +86,16 @@ RSpec.describe SurenotifyRails::Deliverer do
       expect(message.message_id).to eq("request-id-1")
     end
 
-    it "does not set message_id and returns the response on API failure" do
+    it "raises APIError and does not set message_id on API failure" do
       message = build_message
       stub_request(:post, "https://mail.surenotifyapi.com/v1/messages")
         .to_return(status: 400, body: "bad request")
 
-      response = deliverer.deliver!(message)
-
-      expect(response).not_to be_a(Net::HTTPSuccess)
-      expect(response.code).to eq("400")
+      expect { deliverer.deliver!(message) }
+        .to raise_error(SurenotifyRails::APIError) do |error|
+          expect(error.code).to eq("400")
+          expect(error.body).to eq("bad request")
+        end
       expect(message.message_id).to be_nil
     end
 
@@ -138,6 +162,44 @@ RSpec.describe SurenotifyRails::Deliverer do
         .to raise_error(SurenotifyRails::TooManyRecipientsError, /at most 100/)
       expect(a_request(:post, "https://mail.surenotifyapi.com/v1/messages"))
         .not_to have_been_made
+    end
+
+    it "raises NoRecipientsError before calling the API when to/cc/bcc are all empty" do
+      message = build_message(to: nil)
+
+      expect { deliverer.deliver!(message) }
+        .to raise_error(SurenotifyRails::NoRecipientsError, /no recipients/)
+      expect(a_request(:post, "https://mail.surenotifyapi.com/v1/messages"))
+        .not_to have_been_made
+    end
+
+    it "passes exactly 100 recipients without raising" do
+      message = build_message(to: (1..100).map { |i| "user#{i}@example.com" })
+
+      payload = deliver_and_capture(message)
+
+      expect(payload["recipients"].size).to eq(100)
+      expect(a_request(:post, "https://mail.surenotifyapi.com/v1/messages"))
+        .to have_been_made
+    end
+
+    it "uses the body directly as content for a non-multipart HTML message" do
+      payload = deliver_and_capture(build_html_message(body: "<h1>Direct HTML</h1>"))
+
+      expect(payload["content"]).to eq("<h1>Direct HTML</h1>")
+    end
+
+    it "omits the content key for a plain-text-only message" do
+      payload = deliver_and_capture(build_plain_text_message(body: "Plain text body"))
+
+      expect(payload).not_to have_key("content")
+    end
+
+    it "passes verify_ssl: false from settings through to the Surenotify client" do
+      settings = { api_key: "some-api-key", verify_ssl: false }
+      deliverer = described_class.new(settings)
+
+      expect(deliverer.send(:surenotify_client).verify_ssl).to eq(false)
     end
   end
 end

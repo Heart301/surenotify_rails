@@ -19,9 +19,11 @@ module SurenotifyRails
 
     def deliver!(rails_message)
       response = surenotify_client.send_message build_surenotify_message_for(rails_message)
-      if response.is_a?(Net::HTTPSuccess)
-        rails_message.message_id = JSON.parse(response.body)["id"]
+      unless response.is_a?(Net::HTTPSuccess)
+        raise APIError.new("Surenotify API error: #{response.code}",
+                            code: response.code, body: response.body)
       end
+      rails_message.message_id = JSON.parse(response.body)["id"]
       response
     end
 
@@ -45,6 +47,10 @@ module SurenotifyRails
         rails_message[field] ? rails_message[field].addrs : []
       end
       recipients = addrs.uniq(&:address).map { |addr| recipient_for(addr, rails_message) }
+
+      if recipients.empty?
+        raise NoRecipientsError, "the message has no recipients (to/cc/bcc are all empty)"
+      end
 
       if recipients.size > MAX_RECIPIENTS
         raise TooManyRecipientsError,

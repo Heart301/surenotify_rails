@@ -3,6 +3,8 @@ module SurenotifyRails
 
   class TooManyRecipientsError < Error; end
 
+  class NoRecipientsError < Error; end
+
   class APIError < Error
     attr_reader :code, :body
 
