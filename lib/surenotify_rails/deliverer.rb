@@ -38,7 +38,10 @@ module SurenotifyRails
     end
 
     def recipients_for(rails_message)
-      rails_message[:to].addrs.map { |addr| recipient_for(addr) }
+      addrs = [:to, :cc, :bcc].flat_map do |field|
+        rails_message[field] ? rails_message[field].addrs : []
+      end
+      addrs.uniq(&:address).map { |addr| recipient_for(addr) }
     end
 
     def recipient_for(addr)
