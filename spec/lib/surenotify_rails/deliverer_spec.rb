@@ -74,5 +74,19 @@ RSpec.describe SurenotifyRails::Deliverer do
       expect(response.code).to eq("400")
       expect(message.message_id).to be_nil
     end
+
+    it "merges cc and bcc addresses into recipients, deduplicated by address" do
+      message = build_message
+      message.cc  = "Copy Person <copy@example.com>"
+      message.bcc = ["blind@example.com", "receiver@example.com"]
+
+      payload = deliver_and_capture(message)
+
+      expect(payload["recipients"]).to contain_exactly(
+        { "name" => "Receiver Name", "address" => "receiver@example.com" },
+        { "name" => "Copy Person",   "address" => "copy@example.com" },
+        { "name" => "blind",         "address" => "blind@example.com" }
+      )
+    end
   end
 end
