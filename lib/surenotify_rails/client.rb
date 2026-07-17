@@ -20,6 +20,21 @@ module SurenotifyRails
       perform(uri, request)
     end
 
+    def events(filters = {})
+      uri = URI("#{API_URL}/events")
+      uri.query = URI.encode_www_form(filters) unless filters.empty?
+      request = Net::HTTP::Get.new(uri)
+      apply_headers(request)
+      response = perform(uri, request)
+
+      unless response.is_a?(Net::HTTPSuccess)
+        raise APIError.new("Surenotify API error: #{response.code}",
+                           code: response.code, body: response.body)
+      end
+
+      JSON.parse(response.body)
+    end
+
     private
 
     def apply_headers(request)
