@@ -130,5 +130,14 @@ RSpec.describe SurenotifyRails::Deliverer do
 
       expect(payload).not_to have_key("unsubscribedLink")
     end
+
+    it "raises TooManyRecipientsError before calling the API when over 100 recipients" do
+      message = build_message(to: (1..101).map { |i| "user#{i}@example.com" })
+
+      expect { deliverer.deliver!(message) }
+        .to raise_error(SurenotifyRails::TooManyRecipientsError, /at most 100/)
+      expect(a_request(:post, "https://mail.surenotifyapi.com/v1/messages"))
+        .not_to have_been_made
+    end
   end
 end
